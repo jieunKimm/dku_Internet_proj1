@@ -51,7 +51,7 @@ void calculate(TABLE* origin,TABLE* compare,int* path)
 			{	
 				printf("path value is :%d\n",*path);
 				printf("check become 1\n ");
-				check=1;
+				check=1; //already this node is checked
 				break;
 			}
 		}
@@ -59,7 +59,7 @@ void calculate(TABLE* origin,TABLE* compare,int* path)
 			continue;
 		else
 		{
-			for( ;origin->dest != compare->dest; origin++)
+			for( ;origin->dest!= compare->dest; origin++)
 			{	
 				if(origin->dest==0)
 					break;
@@ -67,8 +67,8 @@ void calculate(TABLE* origin,TABLE* compare,int* path)
 			if(origin->dest==0)
 			{
 				origin->dest = compare->dest;
-				origin->link = compare->link;
-				origin->metric= compare->metric;
+				origin->link = lowdest;
+				origin->metric= compare->metric+ lowmetric;
 				continue;
 			}
 			else
@@ -128,13 +128,15 @@ void findShortest()
 
 int main(int argc,char* argv[])
 {
-	int nodeNum=atoi(*argv);
+	int nodeNum=atoi(argv[1]);
 	printf("nodeNum:%d\n",nodeNum);
-	FILE* filearray[2];             //remove when combine the code!
-	filearray[0]=fopen("input3.txt","r"); //arbitaray setting 
-	filearray[1]=fopen("input.txt","r");     //arbitarary setting
-
-	fp_org = fopen("input2.txt","r"); //set this on the main when combine code.
+	FILE* filearray[6];             //remove when combine the code!
+	filearray[1]=fopen("input1.txt","r"); //arbitaray setting 
+	filearray[2]=fopen("input2.txt","r");     //arbitarary setting
+	filearray[3]=fopen("input3.txt","r");
+	filearray[4]=fopen("input4.txt","r");
+	filearray[5]=fopen("input5.txt","r");
+	fp_org = filearray[2];// fopen("input2.txt","r"); //set this on the main when combine code.
 
 
 	ReadNInsert(fp_org, point_origin);
@@ -142,7 +144,7 @@ int main(int argc,char* argv[])
 	int*  p_path;
 	int i = 0 ; //for literative function
 	p_path= path;
-	*p_path = 88; // store itself
+	*p_path = 2; // store itself
 	p_path ++;
 	printTable("initial",origin);
 	findShortest();
@@ -152,7 +154,7 @@ int main(int argc,char* argv[])
 	printf("nodeNum:%d\n",nodeNum)	;
 	for(i=0;i<(nodeNum-2);i++)
 	{
-		fp_cmp=filearray[i];
+		fp_cmp=filearray[lowdest];
 		printf("open file well\n");
 		ReadNInsert(fp_cmp,point_compare);
 		printTable("origin",origin);
@@ -167,6 +169,11 @@ int main(int argc,char* argv[])
 
 
 	}
+	printf("dijstra path:");
+        for(int* imm=path;imm<p_path;imm++)
+        	printf("%d-",*imm);
+	printf("\n");
+	printTable("Final",origin);
 	tableFlag=1;
 	return 0;
 }

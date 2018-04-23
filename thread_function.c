@@ -126,8 +126,9 @@ void findShortest()
 	lowpt->flag = 1;
 }
 
-int main(int nodeNum)
+int main(int argc,char* argv[])
 {
+	int nodeNum=atoi(*argv);
 	printf("nodeNum:%d\n",nodeNum);
 	FILE* filearray[2];             //remove when combine the code!
 	filearray[0]=fopen("input3.txt","r"); //arbitaray setting 

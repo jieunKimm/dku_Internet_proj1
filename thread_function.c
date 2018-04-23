@@ -9,12 +9,18 @@ typedef struct{
 	int flag;
 }TABLE;
 
+
+FILE* fp_org;
+FILE* fp_cmp;
+
 TABLE origin[10]={0};
 TABLE compare[10]={0};
 TABLE*  point_origin= origin;
 TABLE*  point_compare= compare;
 int lowmetric=0;
 int lowdest=0;
+int tableFlag=0;
+TABLE* lowpt;
 void ReadNInsert(FILE* fp,TABLE* tablept){
 	char s[100];
 	char* token;
@@ -97,89 +103,69 @@ void printTable(char* s,TABLE* table)
 
 }
 
-int main(void)
+void findShortest()
 {
-	FILE* fp_org;
-	FILE* fp_cmp;
-	fp_org = fopen("input2.txt","r");
-	ReadNInsert(fp_org, point_origin);
 	TABLE* immpt;
-	TABLE* lowpt;
-	int path[10]={0};
-	int*  p_path;
-	p_path= path;
-	*p_path = 88; // store itself
-	p_path ++;
-	printTable("initial",origin);
-
- 	for (immpt = origin; immpt ->dest !=0 ; immpt++)   // until end of file 
-	{
-  		if (lowmetric == 0)		// the first time fo comparision --> initialize low dest and metric
-  		{
-  			lowmetric = immpt->metric;
-   			lowdest = immpt->dest;
-  		}
- 		 if (lowmetric > immpt->metric)  // if there is dest which has lower metric then change value
-  		{
-			lowpt= immpt;
-   			lowmetric = immpt->metric;
-   			lowdest = immpt->dest;
-  		}
- 	}	
-
-	lowpt->flag = 1;
-	printf("low dest : %d \n",lowdest);
-
- 	*p_path = lowdest;
-	 p_path++;
-	
-	//request comm to lowdest
-	fp_cmp = fopen("input3.txt","r");
-	ReadNInsert(fp_cmp,point_compare);
-
-	printf("read 2 complete\n");
-
-
-	calculate(origin,compare,path);
-	printTable("updated",origin);
-	memset(&compare,0,sizeof(compare));
-
-	 for (lowmetric=0,lowdest=0,immpt = origin; immpt ->dest !=0 ; immpt++)   // until end of file
+        for (lowmetric=0,lowdest=0,immpt = origin; immpt ->dest !=0 ; immpt++)   // until end of file
         {
-		if(immpt->flag ==1)
-			continue;
+                if(immpt->flag ==1)
+                        continue;
                 if (lowmetric == 0)             // the first time fo comparision --> initialize low dest and metric
                 {
-			lowpt=immpt;
+                        lowpt=immpt;
                         lowmetric = immpt->metric;
                         lowdest = immpt->dest;
                 }
                  if (lowmetric > immpt->metric)  // if there is dest which has lower metric then change value
                 {
-			lowpt=immpt;
+                        lowpt=immpt;
                         lowmetric = immpt->metric;
                         lowdest = immpt->dest;
                 }
         }
+	lowpt->flag = 1;
+}
 
-        lowpt->flag = 1;
+int main(int nodeNum)
+{
+	printf("nodeNum:%d\n",nodeNum);
+	FILE* filearray[2];             //remove when combine the code!
+	filearray[0]=fopen("input3.txt","r"); //arbitaray setting 
+	filearray[1]=fopen("input.txt","r");     //arbitarary setting
+
+	fp_org = fopen("input2.txt","r"); //set this on the main when combine code.
+
+
+	ReadNInsert(fp_org, point_origin);
+	int path[10]={0};
+	int*  p_path;
+	int i = 0 ; //for literative function
+	p_path= path;
+	*p_path = 88; // store itself
+	p_path ++;
+	printTable("initial",origin);
+	findShortest();
 	printf("low dest : %d \n",lowdest);
-	*p_path = lowdest;
-        p_path++;
-	fp_cmp = fopen("input.txt","r");
-	printf("open file well \n");
-        ReadNInsert(fp_cmp,point_compare);
-	printTable("comopare1",compare);
-        printf("read 3 complete\n");
+ 	*p_path = lowdest;
+	 p_path++;
+	printf("nodeNum:%d\n",nodeNum)	;
+	for(i=0;i<(nodeNum-2);i++)
+	{
+		fp_cmp=filearray[i];
+		printf("open file well\n");
+		ReadNInsert(fp_cmp,point_compare);
+		printTable("origin",origin);
+		printTable("compare",compare);
+		calculate(origin,compare,path);
+        	printTable("updated",origin);
+        	memset(&compare,0,sizeof(compare));
+        	findShortest();
+       		printf("low dest : %d \n",lowdest);
+        	*p_path = lowdest;
+		p_path++;
 
 
-        calculate(origin,compare,path);
-
-        printTable("updated",origin);
-
-
-
-
-
+	}
+	tableFlag=1;
 	return 0;
 }

@@ -15,8 +15,8 @@ de들이 실행해야하는 코드 정리*/
 typedef struct{
  	int flag;
 	int dest;
-    int link;
-    int metric;
+	int link;
+        int metric;
  }TABLE;
 FILE* fp_org;
 FILE* fp_cmp;
@@ -31,7 +31,7 @@ int path[10]={0};
 int* p_path = path;
 pthread_t tids[100];
 int thds=0;
-FILE * client(int portnum);
+char * client(int portnum);
 void * dijkstra(void*);
 static void * handle(void *);
 FILE* rfile;
@@ -278,6 +278,7 @@ static void * handle(void * arg){
 
 void* dijkstra(void* arg){
 	int nodeNum = *((int *)arg);
+	char* title=malloc(sizeof(char)* 20 );
 	printf("nodeNum: %d\n",nodeNum);
 	printTable("initial",origin);
 	findShortest();
@@ -288,17 +289,18 @@ void* dijkstra(void* arg){
 	int i= 0 ;
 	for(i=0;i<=(nodeNum-2);i++)
 	{
-		fp_cmp=client(lowdest);
+		title=client(lowdest);
+		fp_cmp = fopen(title,"r");
 		printf("connect\n");
 		ReadNInsert(fp_cmp,point_compare);
 		printTable("origin",origin);
 		printTable("compare",compare);
 		calculate(origin,compare,path);
-        printTable("updated",origin);
-        memset(&compare,0,sizeof(compare));
-        findShortest();
-       	printf("low dest : %d \n",lowdest);
-        *p_path = lowdest;
+        	printTable("updated",origin);
+        	memset(&compare,0,sizeof(compare));
+       		findShortest();
+       		printf("low dest : %d \n",lowdest);
+        	*p_path = lowdest;
 		p_path++;
 	}
 	printf("dijstra path:");
@@ -306,10 +308,11 @@ void* dijkstra(void* arg){
         	printf("%d-",*imm);
 	printf("\n");
 	printTable("Final",origin);
+	free(title);
 	return 0;
 }
 //다이스트라 알고리즘
-FILE* client(int arg){
+char* client(int arg){
 	int fd_sock, cli_sock;
 	int port_num, ret;
 	struct sockaddr_in addr;
@@ -359,5 +362,6 @@ FILE* client(int arg){
 		fwrite(r_buffer, 1, len,revalue);
 		close(fd_sock);
 	//	fflush(NULL);
-	return revalue;
+	fclose(revalue);
+	return title;
 }

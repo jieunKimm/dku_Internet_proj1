@@ -47,10 +47,6 @@ int main(int argc, char *argv[]){
 	}
 	else printf("read input file\n");
 
-//다른 process열릴때까지 기다리기5초
-
-	//file space대로 끈어서 각 table 요소에 저장
-
 	//쓰레드로 calculate실행 -> 다이스트라 알고리즘
 	//쓰레드 열기
 	pthread_create(&tids[thds], NULL, calculate,(void*) p_num);
@@ -105,10 +101,7 @@ int main(int argc, char *argv[]){
 	}// end for
 
 //모든 thread가 끝날때까지 기다리기
-	for(int i=0;i<=thds;i++){
-		rc = pthread_join(tids[i], (void**)&ret);
-		printf("join all thread\n");
-	}
+	for(int i=0;i<=thds;i++) rc = pthread_join(tids[i], (void**)&ret);
 	return 0;
 }
 
@@ -148,8 +141,8 @@ static void * handle(void * arg){
     size = ftell(rfile);          // 파일 포인터의 현재 위치를 얻음
     send_buffer = malloc(size + 1);    // 파일 크기 + 1바이트(문자열 마지막의 NULL)만큼 동적 메모리 할당
     memset(send_buffer, 0, size + 1);  // 파일 크기 + 1바이트만큼 메모리를 0으로 초기화
-    fseek(rfile, 0, SEEK_SET);                // 파일 포인터를 파일의 처음으로 이동시킴
-    fread(send_buffer, size, 1, rfile);    // hello.txt에서 파일 크기만큼 값을 읽음
+    fseek(rfile, 0, SEEK_SET);          // 파일 포인터를 파일의 처음으로 이동시킴
+    fread(send_buffer, size, 1, rfile);  //파일 크기만큼 값을 읽음
 		
 	len = strlen(send_buffer);
 	printf("send buffer %s\n ",send_buffer);

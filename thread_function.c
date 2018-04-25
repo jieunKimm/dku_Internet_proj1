@@ -130,13 +130,14 @@ int main(int argc,char* argv[])
 {
 	int nodeNum=atoi(argv[1]);
 	printf("nodeNum:%d\n",nodeNum);
-	FILE* filearray[6];             //remove when combine the code!
+	FILE* filearray[7];             //remove when combine the code!
 	filearray[1]=fopen("input1.txt","r"); //arbitaray setting 
 	filearray[2]=fopen("input2.txt","r");     //arbitarary setting
 	filearray[3]=fopen("input3.txt","r");
 	filearray[4]=fopen("input4.txt","r");
 	filearray[5]=fopen("input5.txt","r");
-	fp_org = filearray[2];// fopen("input2.txt","r"); //set this on the main when combine code.
+	filearray[6]=fopen("input6.txt","r");
+	fp_org = filearray[1];// fopen("input2.txt","r"); //set this on the main when combine code.
 
 
 	ReadNInsert(fp_org, point_origin);
@@ -144,7 +145,7 @@ int main(int argc,char* argv[])
 	int*  p_path;
 	int i = 0 ; //for literative function
 	p_path= path;
-	*p_path = 2; // store itself
+	*p_path = 1; // store itself
 	p_path ++;
 	printTable("initial",origin);
 	findShortest();

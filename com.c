@@ -1,5 +1,5 @@
-/*2018.04.22
-각 node들이 실행해야하는 코드 정리*/
+/*
+de들이 실행해야하는 코드 정리*/
 #include <stdio.h>
 #include <stdlib.h>
 #include <errno.h>
@@ -23,7 +23,7 @@ int thds=0;
 void * calculate(void*);
 static void * handle(void *);
 FILE* rfile;
-TABLE* t;
+
 //main
 int main(int argc, char *argv[]){
 	int srv_sock,cli_sock;
@@ -31,9 +31,7 @@ int main(int argc, char *argv[]){
 	struct sockaddr_in addr;
 	int len,rc;
 	int* p_num = &port_num;
-	t->dest = 3333;
-	t->link = 3333;
-	t-> metric = 1;
+
 //input값 잘못 들어온 경우
 	if(argc != 4)	printf("excute form : ./com input.txt (port number) (node number)\n");
 //input으로 들어온 대로 자신의 port번호 지정
@@ -50,13 +48,11 @@ int main(int argc, char *argv[]){
 	else printf("read input file\n");
 
 //다른 process열릴때까지 기다리기5초
-	sleep(5);
 
 	//file space대로 끈어서 각 table 요소에 저장
 
 	//쓰레드로 calculate실행 -> 다이스트라 알고리즘
 	//쓰레드 열기
-	printf("do dijstra\n");
 	pthread_create(&tids[thds], NULL, calculate,(void*) p_num);
 
 //server로써의 역할
@@ -102,7 +98,7 @@ int main(int argc, char *argv[]){
 		pthread_create(&tids[thds], NULL, handle, &cli_sock);
 
 	//만약모든 node에게 정보 주었다면 
-		if(thds == node_num){ 
+		if(thds == node_num-1){ 
 			close(srv_sock);
 			break;
 		}
@@ -111,7 +107,7 @@ int main(int argc, char *argv[]){
 //모든 thread가 끝날때까지 기다리기
 	for(int i=0;i<=thds;i++){
 		rc = pthread_join(tids[i], (void**)&ret);
-		printf("join all thread");
+		printf("join all thread\n");
 	}
 	return 0;
 }
@@ -120,11 +116,10 @@ int main(int argc, char *argv[]){
 //the process send data with thread that execute handle
 static void * handle(void * arg){
 	int cli_sockfd = *(int *)arg;
-	int len;
+	int len,size;
 	int ret = -1;
 	char *recv_buffer = (char *)malloc(1024);
-	char *send_buffer = (char *)malloc(1024);
-	
+	char *send_buffer;
 	char hbuf[NI_MAXHOST], sbuf[NI_MAXSERV];
 	int port_num =*((int*)arg);
 	/* get peer addr */
@@ -142,20 +137,23 @@ static void * handle(void * arg){
 		pthread_exit(&ret);
 	}
 
+	int h = 0;
 	/* read from client host:port */
 	len = recv(cli_sockfd, recv_buffer, sizeof(recv_buffer), 0);
 	if (len == 0){
 		ret = 0;
 		pthread_exit(&ret);
 	}
-	
-	/*send data to client*/
-//	memset(send_buffer, 0, sizeof(send_buffer));
-//	sprintf(send_buffer, "this is initial table of %d\n", port_num);
-//	len = strlen(send_buffer);
-	
-	send(cli_sockfd, t, sizeof(t), 0);
-//	send(cli_sockfd, send_buffer, len, 0);
+	fseek(rfile, 0, SEEK_END);    // 파일 포인터를 파일의 끝으로 이동시킴
+    size = ftell(rfile);          // 파일 포인터의 현재 위치를 얻음
+    send_buffer = malloc(size + 1);    // 파일 크기 + 1바이트(문자열 마지막의 NULL)만큼 동적 메모리 할당
+    memset(send_buffer, 0, size + 1);  // 파일 크기 + 1바이트만큼 메모리를 0으로 초기화
+    fseek(rfile, 0, SEEK_SET);                // 파일 포인터를 파일의 처음으로 이동시킴
+    fread(send_buffer, size, 1, rfile);    // hello.txt에서 파일 크기만큼 값을 읽음
+		
+	len = strlen(send_buffer);
+	printf("send buffer %s\n ",send_buffer);
+	send(cli_sockfd,send_buffer,len,0);
 	close(cli_sockfd);
 	free(recv_buffer);
 	free(send_buffer);
@@ -173,52 +171,48 @@ void* calculate(void* arg){
 	size_t getline_len;
 	char* cur_net;
 	char *buffer;
-//	char r_buffer[1024];
-	TABLE* r_buffer;
+	char r_buffer[1024];
 	int flag = 0;
 	int ser_port = 0;
-sleep(5);	
+	
 	port_num = *((int*)arg);
-	printf("port_num : %d", port_num);
+	char* title = malloc(sizeof(char)*20);
+	sprintf(title, "receive%d.txt", port_num);
+	FILE* revalue = fopen(title, "w");
 
-	while(1){
-		if(flag == 1){
-			printf("client\n");	
-			// socket creation
-			fd_sock = socket(AF_INET, SOCK_STREAM, 0);
-			if (fd_sock == -1) {
-				perror("socket");
-				return 0;
-			}
-			cur_net = "127.000.000.001";
-			ser_port = 3434;
-			// addr binding, and connect
-			memset(&addr, 0, sizeof(addr));
-			addr.sin_family = AF_INET;
-			addr.sin_port = htons (ser_port);
-			inet_pton(AF_INET, cur_net, &addr.sin_addr);
-		
-			ret = connect(fd_sock, (struct sockaddr *)&addr, sizeof(addr));
-			if (ret == -1) {
-				perror("connect");
-				close(fd_sock);
-				return 0;
-			}
-	
-			buffer = "want connect";
-			len = strlen(buffer);
-			send(fd_sock, buffer, len, 0);
-
-			memset(r_buffer, 0, sizeof(r_buffer));
-			len = recv(fd_sock, r_buffer, sizeof(r_buffer), 0);
-	
-//			printf("server says $ %s\n", r_buffer);
-			printf("server says $ %d %d %d\n", r_buffer -> dest, r_buffer -> link, r_buffer -> metric);
-			fflush(NULL);
-	
-			close(fd_sock);
-			return 0;
-		}//if end
-		if(port_num == 3333)flag=1;
-	}//while end
+	sleep(5);
+	// socket creation
+	fd_sock = socket(AF_INET, SOCK_STREAM, 0);
+	if (fd_sock == -1) {
+		perror("socket");
+		return 0;
+	}
+	cur_net = "127.000.000.001";
+	if(port_num==3333)
+		ser_port = 3434;
+	else
+		ser_port = 3333;
+	// addr binding, and connect
+	memset(&addr, 0, sizeof(addr));
+	addr.sin_family = AF_INET;
+	addr.sin_port = htons (ser_port);
+	inet_pton(AF_INET, cur_net, &addr.sin_addr);
+				ret = connect(fd_sock, (struct sockaddr *)&addr, sizeof(addr));
+	if (ret == -1) {
+		perror("connect");
+		close(fd_sock);
+		return 0;
+	}
+	buffer = "want connect";
+	len = strlen(buffer);
+	send(fd_sock, buffer, len, 0);
+	while(1){	
+		memset(r_buffer, 0, sizeof(r_buffer));
+		len = recv(fd_sock, r_buffer, sizeof(r_buffer), 0);	
+		if(len >0) break;
+	}
+		printf("server says $ %s,%d\n", r_buffer,len);
+		fwrite(r_buffer, 1, len,revalue);
+		close(fd_sock);
+		fflush(NULL);
 }

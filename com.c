@@ -12,16 +12,25 @@ de들이 실행해야하는 코드 정리*/
 #include <pthread.h>
 #include <netdb.h>
 
+
 typedef struct{
  	int flag;
 	int dest;
 	int link;
         int metric;
  }TABLE;
+
+typedef struct{
+        int dest;
+        int link;
+}ROUTE;
+
+
 FILE* fp_org;
 FILE* fp_cmp;
 TABLE origin[10]={0};
 TABLE compare[10]={0};
+ROUTE route[10]={0};
 TABLE*  point_origin= origin;
 TABLE*  point_compare= compare;
 int lowmetric=0;
@@ -36,6 +45,9 @@ void * dijkstra(void*);
 static void * handle(void *);
 FILE* rfile;
 FILE* send_pointer;
+
+
+
 void ReadNInsert(FILE* fp,TABLE* tablept){
 	char s[100];
 	char* token;
@@ -50,6 +62,28 @@ void ReadNInsert(FILE* fp,TABLE* tablept){
 	//fclose(fp);
 
 }
+void printRoute(char* s,ROUTE* route)
+{
+        ROUTE* immpt;
+         printf("----------------------------%s_table---------------------------------\n",s);
+         for(immpt=route; immpt->dest != 0 ; immpt++){
+                printf(" dest: %d, link: %d\n",immpt->dest,immpt->link);
+        }
+        printf("---------------------------------------------------------------------------\n");
+
+}
+
+int findLink(int dest)
+{
+        TABLE* imm;
+        for(imm=origin;imm->dest!= dest ; imm++);
+        if(imm->link == dest)
+                return imm->link;
+        else
+                return findLink(imm->link);
+}
+
+
 
 void calculate(TABLE* origin,TABLE* compare,int* path)
 {
@@ -304,10 +338,23 @@ void* dijkstra(void* arg){
 		p_path++;
 	}
 	printf("dijstra path:");
-        for(int* imm=path;*imm!=0;imm++)
+
+        for(int* imm=path;*imm!=0;imm++) //dijkstra path print
         	printf("%d-",*imm);
 	printf("\n");
 	printTable("Final",origin);
+
+
+	int dest_num = 0;
+	TABLE* tp = origin;
+        ROUTE* rp = route;
+        for(;tp->dest!=0;tp++,rp++ )
+        {
+                dest_num = tp ->dest;
+                rp->dest = dest_num;
+                rp->link = findLink(dest_num);
+        }
+        printRoute("route",route);
 	free(title);
 	return 0;
 }

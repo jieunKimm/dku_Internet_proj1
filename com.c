@@ -1,3 +1,5 @@
+/*
+de들이 실행해야하는 코드 정리*/
 #include <stdio.h>
 #include <stdlib.h>
 #include <errno.h>
@@ -10,35 +12,16 @@
 #include <pthread.h>
 #include <netdb.h>
 
-
 typedef struct{
  	int flag;
 	int dest;
 	int link;
         int metric;
  }TABLE;
-
-typedef struct{
-        int dest;
-        int link;
-}ROUTE;
-
-typedef struct{
-	int start;
-	int dest;
-	char* data;
-}PUSH;
-
 FILE* fp_org;
 FILE* fp_cmp;
 TABLE origin[10]={0};
 TABLE compare[10]={0};
-
-ROUTE route[10]={0};
-int start;
-int dest;
-char* data;
-
 TABLE*  point_origin= origin;
 TABLE*  point_compare= compare;
 int lowmetric=0;
@@ -46,173 +29,13 @@ int lowdest=0;
 TABLE* lowpt;
 int path[10]={0};
 int* p_path = path;
-
 pthread_t tids[100];
 int thds=0;
-int port_num;
-
 char * client(int portnum);
 void * dijkstra(void*);
 static void * handle(void *);
 FILE* rfile;
 FILE* send_pointer;
-
-void* send_client(void*);
-void* send_handle(void*);
-
-void forward(){
-	int srv_sock, cli_sock;
-	int ret;
-	struct sockaddr_in addr;
-	PUSH* p_data = malloc(sizeof(PUSH));
-	p_data-> start = start;
-	p_data->dest = dest;
-	p_data-> data = data;
-	
-	thds++;
-	//보낼 정보 전달
-	pthread_create(&tids[thds], NULL,send_client,(void *)p_data);
-	
-//server로써의 역할
-	//socket열기
-	srv_sock = socket(AF_INET, SOCK_STREAM, 0);
-	if (srv_sock == -1) {
-		perror("Server socket CREATE fail!!");
-		return ;
-	}
-
-//addr binding
-	memset(&addr, 0, sizeof(addr));
-	addr.sin_family = AF_INET;
-	addr.sin_addr.s_addr = htons (INADDR_ANY); // 32bit IPV4 addr that not use static IP addr
-	addr.sin_port = htons (port_num); // using port num
-
-	ret = bind(srv_sock, (struct sockaddr *)&addr, sizeof(addr));	
-	if (ret == -1) {
-		perror("BIND error!!");
-		close(srv_sock);
-		return ;
-	}
-	//listen
-	for (;;){
-	// Listen part
-		ret = listen(srv_sock, 0);
-		alarm(10);
-		if (ret == -1) {
-			perror("LISTEN stanby mode fail");
-			close(srv_sock);
-			return ;	
-		}
-	
-	//요청오면 accept -> cli저장
-		cli_sock = accept(srv_sock, (struct sockaddr *)NULL, NULL); // client socket
-		if (cli_sock == -1) {
-			perror("cli_sock connect ACCEPT fail");
-			close(srv_sock);
-		}
-		thds++;
-	
-	// cli handler
-	//thread를 통해 cli와 통신 -> thread 실행 함수 -> handle
-		pthread_create(&tids[thds], NULL,send_handle, &cli_sock);
-	}// end for
-}
-
-void* send_handle(void* arg){
-	char recv_buffer[1024];
-	char* token;
-	char hbuf[NI_MAXHOST], sbuf[NI_MAXSERV];
-	int ret = -1;
-	int cli_sockfd = *(int *)arg;
-	int len;
-	PUSH* send_data = malloc(sizeof(PUSH));
-
-	/* get peer addr */
-	struct sockaddr peer_addr;
-	socklen_t peer_addr_len;
-	memset(&peer_addr, 0, sizeof(peer_addr));
-	peer_addr_len = sizeof(peer_addr);
-	ret = getpeername(cli_sockfd, &peer_addr, &peer_addr_len);
-	ret = getnameinfo(&peer_addr, peer_addr_len, 
-		hbuf, sizeof(hbuf), sbuf, sizeof(sbuf), 
-		NI_NUMERICHOST | NI_NUMERICSERV); 
-	
-	//client로 부터 정보 받기
-while(1){	
-		memset(recv_buffer, 0, sizeof(recv_buffer));
-		len = recv(cli_sockfd, recv_buffer, sizeof(recv_buffer), 0);
-		if(len >0) break;
-	}
-	//정보 저장하기
-	token = strtok(recv_buffer, " ");
-	send_data->start = atoi(token);
-	send_data -> dest = atoi(strtok(NULL," "));
-	send_data -> data = strtok(NULL, " ");
-	
-	if(send_data -> dest == port_num){
-		printf("\nrecieved : from %d , %s\n", send_data->start , send_data->data);
-		free(send_data);
-		ret = 0;
-		pthread_exit(0);
-	}
-	
-	thds++;
-	int j = thds;
-	pthread_create(&tids[thds], NULL, send_client,(void *)send_data);
-	int rc = pthread_join(tids[j], (void**)&ret);
-	if(rc != 0 ){
-		printf("wrong\n");
-		ret = 0;
-		pthread_exit(0);
-	}
-	free(send_data);
-}
-
-void* send_client(void* arg){
-	PUSH* send_data = (PUSH*) arg;
-	ROUTE* temp = route;
-	char* send_buffer = (char *)malloc(1024);
-	int ser_port = 0;
-	int fd_sock;
-	char* cur_net;
-	struct sockaddr_in addr;
-	int ret,len;
-
-	sleep(3);
-	sprintf(send_buffer, "%d %d %s", send_data->start , send_data->dest, send_data->data);
-
-	while(1){
-		if(temp->dest == send_data->dest){
-			ser_port = temp->link;
-			break;
-		}
-		temp++;
-	}
-	
-	// socket creation
-	fd_sock = socket(AF_INET, SOCK_STREAM, 0);
-	if (fd_sock == -1) {
-		perror("socket");
-		return 0;
-	}
-	cur_net = "127.000.000.001";
-	// addr binding, and connect
-	memset(&addr, 0, sizeof(addr));
-	addr.sin_family = AF_INET;
-	addr.sin_port = htons (ser_port);
-	inet_pton(AF_INET, cur_net, &addr.sin_addr);
-	ret = connect(fd_sock, (struct sockaddr *)&addr, sizeof(addr));
-	if (ret == -1) {
-		perror("connect");
-		close(fd_sock);
-		return 0;
-	}
-	len = strlen(send_buffer);
-	send(fd_sock, send_buffer, len, 0);	
-	
-	free(send_buffer);
-}
-
 void ReadNInsert(FILE* fp,TABLE* tablept){
 	char s[100];
 	char* token;
@@ -227,28 +50,6 @@ void ReadNInsert(FILE* fp,TABLE* tablept){
 	//fclose(fp);
 
 }
-void printRoute(char* s,ROUTE* route)
-{
-        ROUTE* immpt;
-         printf("----------------------------%s_table---------------------------------\n",s);
-         for(immpt=route; immpt->dest != 0 ; immpt++){
-                printf(" dest: %d, link: %d\n",immpt->dest,immpt->link);
-        }
-        printf("---------------------------------------------------------------------------\n");
-
-}
-
-int findLink(int dest)
-{
-        TABLE* imm;
-        for(imm=origin;imm->dest!= dest ; imm++);
-        if(imm->link == dest)
-                return imm->link;
-        else
-                return findLink(imm->link);
-}
-
-
 
 void calculate(TABLE* origin,TABLE* compare,int* path)
 {
@@ -342,23 +143,18 @@ void findShortest()
 //main
 int main(int argc, char *argv[]){
 	int srv_sock,cli_sock;
-	int ret, node_num;
+	int port_num, ret, node_num;
 	struct sockaddr_in addr;
 	int len,rc;
 	int* p_num = &node_num;	
 //input값 잘못 들어온 경우
-	if(argc != 6)	printf("excute form : ./com input.txt (port number) (node number) (destination port number) (data)\n");
+	if(argc != 4)	printf("excute form : ./com input.txt (port number) (node number)\n");
 //input으로 들어온 대로 자신의 port번호 지정
 	port_num = atoi(argv[2]);
 	*p_path = port_num;
 	p_path ++ ;
 //input으로 들어온 대로 노드 개수 저장
 	node_num = atoi(argv[3]);
-	data= malloc(sizeof(char)*20);
-
-	start = port_num;
-	dest = atoi(argv[4]);
-	data = argv[5];
 //input파일을 받아서 자신의 table정보 채우기
 	//file 읽기
 	rfile = fopen((char *) argv[1], "r");
@@ -424,8 +220,6 @@ int main(int argc, char *argv[]){
 
 //모든 thread가 끝날때까지 기다리기
 	for(int i=0;i<=thds;i++) rc = pthread_join(tids[i], (void**)&ret);
-
-	forward();	
 	return 0;
 }
 
@@ -451,6 +245,7 @@ static void * handle(void * arg){
 		NI_NUMERICHOST | NI_NUMERICSERV); 
 
     fread(recv_buffer, 100, 1, send_pointer);  //파일 크기만큼 값을 읽음
+	printf("recv_buffer : %s", recv_buffer);
 	if (ret != 0) {
 		ret = -1;
 		pthread_exit(&ret);
@@ -509,23 +304,10 @@ void* dijkstra(void* arg){
 		p_path++;
 	}
 	printf("dijstra path:");
-
-        for(int* imm=path;*imm!=0;imm++) //dijkstra path print
+        for(int* imm=path;*imm!=0;imm++)
         	printf("%d-",*imm);
 	printf("\n");
 	printTable("Final",origin);
-
-
-	int dest_num = 0;
-	TABLE* tp = origin;
-        ROUTE* rp = route;
-        for(;tp->dest!=0;tp++,rp++ )
-        {
-                dest_num = tp ->dest;
-                rp->dest = dest_num;
-                rp->link = findLink(dest_num);
-        }
-        printRoute("route",route);
 	free(title);
 	return 0;
 }
@@ -547,7 +329,7 @@ char* client(int arg){
 	sprintf(title, "receive%d.txt", getpid());
 	FILE* revalue = fopen(title, "w");
 
-	sleep(3);
+	sleep(5);
 	// socket creation
 	fd_sock = socket(AF_INET, SOCK_STREAM, 0);
 	if (fd_sock == -1) {

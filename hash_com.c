@@ -215,7 +215,7 @@ int hash(int key)
 {
 	return key /1000;
 }
-
+/*
 void ReadNInsert(FILE* fp,TABLE* tablept){
 	char s[100];
 	char* token;
@@ -229,7 +229,7 @@ void ReadNInsert(FILE* fp,TABLE* tablept){
 	}
 	//fclose(fp);
 
-}
+}*/
 /*
 void printRoute(char* s,ROUTE* route)
 {

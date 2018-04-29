@@ -33,6 +33,7 @@ TABLE origin[10]={0};
 TABLE compare[10]={0};
 TABLE*  point_origin= origin;
 TABLE*  point_compare= compare;
+ROUTE route[10]={0};
 //variable for storing lowdest info
 int lowmetric=0;
 int lowdest=0;
@@ -52,7 +53,6 @@ FILE* send_pointer;
 
 void ReadNInsert(FILE* fp,TABLE* tablept){ // Read file and insert to table
 
-void ReadNInsert(FILE* fp,TABLE* tablept){
 
 	char s[100];
 	char* token;

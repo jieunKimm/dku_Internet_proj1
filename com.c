@@ -328,27 +328,27 @@ void* dijkstra(void* arg){
 	 p_path++;
 	printf("nodeNum:%d\n",nodeNum)	;
 	int i= 0 ;
-	for(i=0;i<=(nodeNum-2);i++)
+	for(i=0;i<=(nodeNum-2);i++) // implement this nodesNum-1 times
 	{
 		title=client(lowdest);
 		fp_cmp = fopen(title,"r");
 		printf("connect\n");
-		ReadNInsert(fp_cmp,point_compare);
+		ReadNInsert(fp_cmp,point_compare); //read file and insert to compare table
 		printTable("origin",origin);
-		printTable("compare",compare);
-		calculate(origin,compare,path);
-        	printTable("updated",origin);
-        	memset(&compare,0,sizeof(compare));
+		printTable("compare",compare); //print two tables
+		calculate(origin,compare,path); // calculate tables
+        	printTable("updated",origin); //print updated tables
+        	memset(&compare,0,sizeof(compare)); // initialize compare table
        		findShortest();
        		printf("low dest : %d \n",lowdest);
-        	*p_path = lowdest;
+        	*p_path = lowdest; // insert lowdest to path for not checking later
 		p_path++;
 	}
 	printf("dijstra path:");
         for(int* imm=path;*imm!=0;imm++)
         	printf("%d-",*imm);
 	printf("\n");
-	printTable("Final",origin);
+	printTable("Final",origin); // print final table
 	int dest_num = 0;
 	TABLE* tp = origin;
         ROUTE* rp = route;

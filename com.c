@@ -12,7 +12,7 @@ de들이 실행해야하는 코드 정리*/
 #include <pthread.h>
 #include <netdb.h>
 
-
+//structure for table node
 typedef struct{
  	int flag;
 	int dest;
@@ -20,6 +20,7 @@ typedef struct{
         int metric;
  }TABLE;
 
+//structure for final route node 
 typedef struct{
         int dest;
         int link;
@@ -28,11 +29,13 @@ typedef struct{
 
 FILE* fp_org;
 FILE* fp_cmp;
+//Table variable.It can store upto 10 nodes
 TABLE origin[10]={0};
 TABLE compare[10]={0};
 ROUTE route[10]={0};
 TABLE*  point_origin= origin;
 TABLE*  point_compare= compare;
+//variable for storing lowdest info
 int lowmetric=0;
 int lowdest=0;
 TABLE* lowpt;
@@ -48,7 +51,7 @@ FILE* send_pointer;
 
 
 
-void ReadNInsert(FILE* fp,TABLE* tablept){
+void ReadNInsert(FILE* fp,TABLE* tablept){ // Read file and insert to table
 	char s[100];
 	char* token;
 	while((fgets(s,100,fp))!=NULL)
@@ -59,10 +62,10 @@ void ReadNInsert(FILE* fp,TABLE* tablept){
 		(tablept)->metric = atoi(strtok(NULL," "));
 		(tablept)++;
 	}
-	//fclose(fp);
+	
 
 }
-void printRoute(char* s,ROUTE* route)
+void printRoute(char* s,ROUTE* route) // function for print final route variable
 {
         ROUTE* immpt;
          printf("----------------------------%s_table---------------------------------\n",s);
@@ -73,30 +76,30 @@ void printRoute(char* s,ROUTE* route)
 
 }
 
-int findLink(int dest)
+int findLink(int dest) // funcion for finding link, this will be used in forwarding code
 {
         TABLE* imm;
-        for(imm=origin;imm->dest!= dest ; imm++);
-        if(imm->link == dest)
-                return imm->link;
+        for(imm=origin;imm->dest!= dest ; imm++); // find node that has info we want 
+        if(imm->link == dest) // if link is same with dest
+                return imm->link; // then it means that node is really final node
         else
-                return findLink(imm->link);
+                return findLink(imm->link); // otherwise, use recursive function
 }
 
 
 
-void calculate(TABLE* origin,TABLE* compare,int* path)
+void calculate(TABLE* origin,TABLE* compare,int* path) //compare two table and update
 {
 	int* path_p = path;
 	int check=0;
 	int comparemetric = 0;
 	TABLE* origin_p = origin;
-	for(; compare->dest!=0 ; compare++,origin=origin_p,path=path_p,check=0)
+	for(; compare->dest!=0 ; compare++,origin=origin_p,path=path_p,check=0) //check until end of table
 	{
 		printf("compare dest:%d\n",compare->dest);
 		for(;*path!= 0;path++)
 		{	
-			if(compare->dest==*path)
+			if(compare->dest==*path) // when the dest is already in path
 			{	
 				printf("path value is :%d\n",*path);
 				printf("check become 1\n ");
@@ -105,22 +108,22 @@ void calculate(TABLE* origin,TABLE* compare,int* path)
 			}
 		}
 		if(check==1)
-			continue;
+			continue; // then continue
 		else
 		{
 			for( ;origin->dest!= compare->dest; origin++)
 			{	
-				if(origin->dest==0)
+				if(origin->dest==0) // if there is not info in origin data
 					break;
 			}
-			if(origin->dest==0)
+			if(origin->dest==0) // insert info of compare to origin
 			{
 				origin->dest = compare->dest;
 				origin->link = lowdest;
 				origin->metric= compare->metric+ lowmetric;
 				continue;
 			}
-			else
+			else // otherwise compare first and if it has lower metric then update
 			{
 				comparemetric = compare->metric + lowmetric;
 				printf("cmoparemetric:%d, origin metric:%d ",comparemetric,origin->metric);	
@@ -152,7 +155,7 @@ void printTable(char* s,TABLE* table)
 
 }
 
-void findShortest()
+void findShortest() // among the origintable, find shortest destination
 {
 	TABLE* immpt;
         for (lowmetric=0,lowdest=0,immpt = origin; immpt ->dest !=0 ; immpt++)   // until end of file
@@ -172,7 +175,7 @@ void findShortest()
                         lowdest = immpt->dest;
                 }
         }
-	lowpt->flag = 1;
+	lowpt->flag = 1; // if we set shortest dest, then make flag 1 
 }
 //main
 int main(int argc, char *argv[]){
@@ -348,7 +351,7 @@ void* dijkstra(void* arg){
 	int dest_num = 0;
 	TABLE* tp = origin;
         ROUTE* rp = route;
-        for(;tp->dest!=0;tp++,rp++ )
+        for(;tp->dest!=0;tp++,rp++ ) //find next link of all nodes 
         {
                 dest_num = tp ->dest;
                 rp->dest = dest_num;

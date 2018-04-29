@@ -12,13 +12,17 @@ de들이 실행해야하는 코드 정리*/
 #include <pthread.h>
 #include <netdb.h>
 
+<<<<<<< HEAD
 //structure for table node
+=======
+>>>>>>> parent of 8513caf... add route table
 typedef struct{
  	int flag;
 	int dest;
 	int link;
         int metric;
  }TABLE;
+<<<<<<< HEAD
 
 //structure for final route node 
 typedef struct{
@@ -27,12 +31,13 @@ typedef struct{
 }ROUTE;
 
 
+=======
+>>>>>>> parent of 8513caf... add route table
 FILE* fp_org;
 FILE* fp_cmp;
 //Table variable.It can store upto 10 nodes
 TABLE origin[10]={0};
 TABLE compare[10]={0};
-ROUTE route[10]={0};
 TABLE*  point_origin= origin;
 TABLE*  point_compare= compare;
 //variable for storing lowdest info
@@ -48,10 +53,14 @@ void * dijkstra(void*);
 static void * handle(void *);
 FILE* rfile;
 FILE* send_pointer;
+<<<<<<< HEAD
 
 
 
 void ReadNInsert(FILE* fp,TABLE* tablept){ // Read file and insert to table
+=======
+void ReadNInsert(FILE* fp,TABLE* tablept){
+>>>>>>> parent of 8513caf... add route table
 	char s[100];
 	char* token;
 	while((fgets(s,100,fp))!=NULL)
@@ -65,6 +74,7 @@ void ReadNInsert(FILE* fp,TABLE* tablept){ // Read file and insert to table
 	
 
 }
+<<<<<<< HEAD
 void printRoute(char* s,ROUTE* route) // function for print final route variable
 {
         ROUTE* immpt;
@@ -87,6 +97,8 @@ int findLink(int dest) // funcion for finding link, this will be used in forward
 }
 
 
+=======
+>>>>>>> parent of 8513caf... add route table
 
 void calculate(TABLE* origin,TABLE* compare,int* path) //compare two table and update
 {
@@ -341,11 +353,11 @@ void* dijkstra(void* arg){
 		p_path++;
 	}
 	printf("dijstra path:");
-
-        for(int* imm=path;*imm!=0;imm++) //dijkstra path print
+        for(int* imm=path;*imm!=0;imm++)
         	printf("%d-",*imm);
 	printf("\n");
 	printTable("Final",origin);
+<<<<<<< HEAD
 
 
 	int dest_num = 0;
@@ -358,6 +370,8 @@ void* dijkstra(void* arg){
                 rp->link = findLink(dest_num);
         }
         printRoute("route",route);
+=======
+>>>>>>> parent of 8513caf... add route table
 	free(title);
 	return 0;
 }

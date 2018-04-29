@@ -20,21 +20,20 @@ typedef struct{
         int metric;
  }TABLE;
 
-typedef struct{
-        int dest;
-        int link;
-}ROUTE;
-
 
 FILE* fp_org;
 FILE* fp_cmp;
 TABLE* findkey(int key);
-TABLE***  hashtable_origin;
+
+//Variable of tables
+TABLE***  hashtable_origin; 
 TABLE*** hashtable_compare;
-ROUTE route[10]={0};
+
+//variable about lowdestination
 int lowmetric=0;
 int lowdest=0;
 TABLE* lowpt;
+
 int path[10]={0};
 int* p_path = path;
 pthread_t tids[100];
@@ -45,15 +44,16 @@ static void * handle(void *);
 FILE* rfile;
 FILE* send_pointer;
 int hash(int key);
-void AddTable(FILE* fp,TABLE*** table)
+
+void AddTable(FILE* fp,TABLE*** table) //Read File and insert to table 
 {
 	char string[100];
 	int bucket;
 	char* token;
 	int i;
-        while((fgets(string,100,fp))!=NULL)
+        while((fgets(string,100,fp))!=NULL) //get line of file
         { 
-	TABLE* imm=(TABLE*)malloc(sizeof(TABLE));
+	TABLE* imm=(TABLE*)malloc(sizeof(TABLE)); // make imm node
 	printf("string :%s \n", string);
         token=strtok(string," ");
         printf("tokenwell\n");
@@ -61,13 +61,13 @@ void AddTable(FILE* fp,TABLE*** table)
         imm->link = atoi(strtok(NULL," "));	
         imm->metric = atoi(strtok(NULL," "));
 	imm->flag=0;
-        bucket = hash(imm->dest);
-	for(i=0;table[bucket][i]!=NULL;i++);
-	table[bucket][i]= imm;
+        bucket = hash(imm->dest);     //dest is key, so find bucket by hash function
+	for(i=0;table[bucket][i]!=NULL;i++); // find empty space
+	table[bucket][i]= imm; 
  	}
 }
 
-void addtotable(int dest,TABLE* table)
+void addtotable(int dest,TABLE* table) //insert node info to table
 {
 	int i= 0;
 	int bucket = hash(dest);
@@ -75,7 +75,7 @@ void addtotable(int dest,TABLE* table)
 	hashtable_origin[bucket][i] =table;
 
 }
-void calculate(TABLE*** origin, TABLE*** compare)
+void calculate(TABLE*** origin, TABLE*** compare) // compare two tables and updated 
 {
 	int i=0;
 	int j=0; 
@@ -86,39 +86,39 @@ void calculate(TABLE*** origin, TABLE*** compare)
 	int* path_pointer = path ;
 	for( i=0;i<BK ;i++)
 	{
-		for(j=0 ; j<SL ; j ++)
+		for(j=0 ; j<SL ; j ++)    // for check all items in hashtable_compare
 		{	
 			check = 0;
 			//printf("i:%d j:%d",i,j);
-			if (compare[i][j] ==NULL ) continue; 
-			for(path_pointer=path;*path_pointer !=0;path_pointer++)
+			if (compare[i][j] ==NULL ) continue; //if there is no element in compare table, skip it
+			for(path_pointer=path;*path_pointer !=0;path_pointer++) // check whether this node is in path or not
 			{
 				if( * path_pointer ==compare[i][j]->dest)
 				{	check =1;
 					break;		
 				}	
 			}
-			if(check == 1)
+			if(check == 1) // if it is in path,then skip
 				continue;
 			else
 			{
 				dest = compare[i][j]->dest;
 				orgpt= findkey(dest);
-				if(orgpt==NULL)
+				if(orgpt==NULL) // if this dest info is not in origin
 				{
 					
 				        imm=(TABLE*)malloc(sizeof(TABLE));
 					imm->dest = compare[i][j]-> dest;
 					imm->link = lowdest;
 					imm->metric = compare[i][j]->metric + lowmetric;
-					addtotable(dest,imm);
+					addtotable(dest,imm); //add to table
 					continue;
 					
 				}
-				else{
+				else{ // if this data info in in origin
 					int comparemetric=0;
 					comparemetric = compare[i][j]->metric + lowmetric;
-					if( orgpt->metric > comparemetric)
+					if( orgpt->metric > comparemetric) //compare metric and update when the origin_metric is lower 
 					{
 						orgpt->link  = lowdest;
 						orgpt -> metric = comparemetric;
@@ -151,7 +151,7 @@ void printTable(char* s, TABLE*** table)
 
 }
 
-TABLE* findkey(int key)
+TABLE* findkey(int key) // find where the data stores.
 
 {
     int bucket;
@@ -163,7 +163,7 @@ TABLE* findkey(int key)
     return NULL;
 }
 
-void findShortest(void)
+void findShortest(void) // find shortest destination among the origin table data 
 {
 	int i;
 	int j;
@@ -195,7 +195,7 @@ void findShortest(void)
 				low_column=j;
 				continue;	
 			}
-			if(lowmetric > (hashtable_origin[i][j]->metric))
+			if(lowmetric > (hashtable_origin[i][j]->metric)) //if there is a lower metric, then update
 			{
 				lowmetric = hashtable_origin[i][j]->metric;
 				lowdest = hashtable_origin[i][j]->dest;
@@ -206,53 +206,15 @@ void findShortest(void)
 		
 		}
 	}
-	if(lowdest ==0)
+	if(lowdest ==0) // all items are already checked 
 		return ;
-	hashtable_origin[low_index][low_column]->flag = 1 ;
+	hashtable_origin[low_index][low_column]->flag = 1 ; 
 }
 
 int hash(int key)
 {
 	return key /1000;
 }
-/*
-void ReadNInsert(FILE* fp,TABLE* tablept){
-	char s[100];
-	char* token;
-	while((fgets(s,100,fp))!=NULL)
-	{
-		token=strtok(s," ");
-		(tablept)->dest = atoi(token) ; 
-		(tablept)->link = atoi(strtok(NULL," "));
-		(tablept)->metric = atoi(strtok(NULL," "));
-		(tablept)++;
-	}
-	//fclose(fp);
-
-}*/
-/*
-void printRoute(char* s,ROUTE* route)
-{
-        ROUTE* immpt;
-         printf("----------------------------%s_table---------------------------------\n",s);
-         for(immpt=route; immpt->dest != 0 ; immpt++){
-                printf(" dest: %d, link: %d\n",immpt->dest,immpt->link);
-        }
-        printf("---------------------------------------------------------------------------\n");
-
-}*/
-/*
-int findLink(int dest)
-{
-        TABLE* imm;
-        for(imm=origin;imm->dest!= dest ; imm++);
-        if(imm->link == dest)
-                return imm->link;
-        else
-                return findLink(imm->link);
-}
-*/
-
 
 
 //main
@@ -402,7 +364,7 @@ static void * handle(void * arg){
 void* dijkstra(void* arg){
 	int nodeNum = *((int *)arg);
 	TABLE*** imm;
-	char* title=malloc(sizeof(char)* 20 );
+	char* title=malloc(sizeof(char)* 20 ); // variable for storing file name 
 	printf("nodeNum: %d\n",nodeNum);
 	printTable("origin",hashtable_origin);
 	findShortest();
@@ -439,18 +401,6 @@ void* dijkstra(void* arg){
         	printf("%d-",*imm);
 	printf("\n");
 	printTable("Final",hashtable_origin);
-
-
-//	int dest_num = 0;
-/*	TABLE* tp = origin;
-        ROUTE* rp = route;
-        for(;tp->dest!=0;tp++,rp++ )
-        {
-                dest_num = tp ->dest;
-                rp->dest = dest_num;
-                rp->link = findLink(dest_num);
-        }
-        printRoute("route",route);*/
 	free(title);
 	return 0;
 }

@@ -13,6 +13,7 @@
 #define SL 3 // dimension 
 #define BK 10 //basket num
 
+//structure for table node
 typedef struct{
  	int flag;
 	int dest;

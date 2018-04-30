@@ -60,14 +60,17 @@ FILE* send_pointer;
 void* send_client(void*);
 void* send_handle(void*);
 
+//send real data
 void forward(){
 	int srv_sock, cli_sock;
 	int ret;
 	struct sockaddr_in addr;
+	
+	//initialize push data
 	PUSH* p_data = malloc(sizeof(PUSH));
-	p_data-> start = start;
-	p_data->dest = dest;
-	p_data-> data = data;
+	p_data-> start = start;//start port number
+	p_data->dest = dest; // destination port number
+	p_data-> data = data; // data that want to send
 	
 	thds++;
 	//보낼 정보 전달
@@ -97,7 +100,7 @@ void forward(){
 	for (;;){
 	// Listen part
 		ret = listen(srv_sock, 0);
-		alarm(10);
+		alarm(20); //after 10s exit this function
 		if (ret == -1) {
 			perror("LISTEN stanby mode fail");
 			close(srv_sock);
@@ -118,6 +121,7 @@ void forward(){
 	}// end for
 }
 
+//send push data to client 
 void* send_handle(void* arg){
 	char recv_buffer[1024];
 	char* token;
@@ -138,19 +142,21 @@ void* send_handle(void* arg){
 		NI_NUMERICHOST | NI_NUMERICSERV); 
 	
 	//client로 부터 정보 받기
-while(1){	
+	while(1){	
 		memset(recv_buffer, 0, sizeof(recv_buffer));
 		len = recv(cli_sockfd, recv_buffer, sizeof(recv_buffer), 0);
-		if(len >0) break;
+		if(len >0) break;//if server recieved data than break from recv loop
 	}
-	//정보 저장하기
+
+	//store data that send to next node
 	token = strtok(recv_buffer, " ");
 	send_data->start = atoi(token);
 	send_data -> dest = atoi(strtok(NULL," "));
 	send_data -> data = strtok(NULL, " ");
 	
+	//if this node is destination
 	if(send_data -> dest == port_num){
-		printf("\nrecieved : from %d , %s\n", send_data->start , send_data->data);
+		printf("\nrecieved : from %d , %s\n", send_data->start , send_data->data);//print received data
 		free(send_data);
 		ret = 0;
 		pthread_exit(0);
@@ -158,7 +164,8 @@ while(1){
 	
 	thds++;
 	int j = thds;
-	pthread_create(&tids[thds], NULL, send_client,(void *)send_data);
+	//if this node is not destination
+	pthread_create(&tids[thds], NULL, send_client,(void *)send_data);//send data to next node
 	int rc = pthread_join(tids[j], (void**)&ret);
 	if(rc != 0 ){
 		printf("wrong\n");
@@ -168,6 +175,7 @@ while(1){
 	free(send_data);
 }
 
+//send data to nexthop
 void* send_client(void* arg){
 	PUSH* send_data = (PUSH*) arg;
 	ROUTE* temp = route;
@@ -178,9 +186,13 @@ void* send_client(void* arg){
 	struct sockaddr_in addr;
 	int ret,len;
 
+	//start after 3s
 	sleep(3);
+	
+	//make send data to nexthop
 	sprintf(send_buffer, "%d %d %s", send_data->start , send_data->dest, send_data->data);
 
+	//find nexthop with route table
 	while(1){
 		if(temp->dest == send_data->dest){
 			ser_port = temp->link;
@@ -196,6 +208,7 @@ void* send_client(void* arg){
 		return 0;
 	}
 	cur_net = "127.000.000.001";
+
 	// addr binding, and connect
 	memset(&addr, 0, sizeof(addr));
 	addr.sin_family = AF_INET;
@@ -207,6 +220,8 @@ void* send_client(void* arg){
 		close(fd_sock);
 		return 0;
 	}
+
+	//send data
 	len = strlen(send_buffer);
 	send(fd_sock, send_buffer, len, 0);	
 	

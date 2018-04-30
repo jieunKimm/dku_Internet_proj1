@@ -123,7 +123,7 @@ void calculate(TABLE*** origin, TABLE*** compare) // compare two tables and upda
 					{
 						orgpt->link  = lowdest;
 						orgpt -> metric = comparemetric;
-						printf("orgptlinke%d,orgptmetric%d",orgpt->link,orgpt->metric);
+						printf("orgptlink %d,orgpt metric%d",orgpt->link,orgpt->metric);
 						printf("metric is updated \n");
 					}
 				}
@@ -155,13 +155,25 @@ void printTable(char* s, TABLE*** table)
 TABLE* findkey(int key) // find where the data stores.
 
 {
+    printf("key: %d \n",key);
     int bucket;
     bucket = hash(key);
     int j=0;
-    for(;j<SL;j++)
-	if(hashtable_origin[bucket][j]->dest == key)
-   		 return hashtable_origin[bucket][j];
-    return NULL;
+    if( hashtable_origin[bucket][0]==NULL)
+	 	return NULL;
+    for(;j<SL;j++){
+
+	if(hashtable_origin[bucket][j]==NULL)
+	{
+		printf("return null\n");
+		return NULL;
+	}
+        else if(hashtable_origin[bucket][j]->dest == key)
+                return hashtable_origin[bucket][j];
+
+    }
+    printf("already full error \n");
+    return NULL; 
 }
 
 void findShortest(void) // find shortest destination among the origin table data 
@@ -237,11 +249,17 @@ int main(int argc, char *argv[]){
 	//file 읽기
 	TABLE*** imm;
 	imm = (TABLE***) malloc(sizeof(TABLE **) * BK);
-	int i;
+	int i,j;
 	for (i=0 ; i<BK ; i++)       //allocating Table with dynamic allocation
 	{ 
 		imm[i] = (TABLE **)malloc(sizeof(TABLE) * SL); 
-	} 
+	}
+	 for (i=0; i<BK; i++)
+         {
+                        for(j=0;j<SL;j++)
+                                imm[i][j] = NULL;
+         }
+ 
 	hashtable_origin = imm;
 	rfile = fopen((char *) argv[1], "r");
 	if(rfile == NULL){
@@ -374,6 +392,7 @@ void* dijkstra(void* arg){
 	 p_path++;
 	printf("nodeNum:%d\n",nodeNum)	;
 	int i;
+	int j;
 	int k= 0 ;
 	for(k=0;k <=(nodeNum-2);k++)
 	{
@@ -382,6 +401,11 @@ void* dijkstra(void* arg){
         	{
        			imm[i] = (TABLE **)malloc(sizeof(TABLE) * SL);
         	}
+		for (i=0; i<BK; i++)
+		{
+			for(j=0;j<SL;j++)
+  				imm[i][j] = NULL;
+		}
 		hashtable_compare = imm; 
 		title=client(lowdest);
 		fp_cmp = fopen(title,"r");

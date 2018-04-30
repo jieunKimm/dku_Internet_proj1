@@ -159,16 +159,16 @@ TABLE* findkey(int key) // find where the data stores.
     int bucket;
     bucket = hash(key);
     int j=0;
-    if( hashtable_origin[bucket][0]==NULL)
-	 	return NULL;
+    if( hashtable_origin[bucket][0]==NULL) //if there is no data in array
+	 	return NULL; //return
     for(;j<SL;j++){
 
-	if(hashtable_origin[bucket][j]==NULL)
+	if(hashtable_origin[bucket][j]==NULL) // if there is no data which matches we want
 	{
 		printf("return null\n");
-		return NULL;
+		return NULL; //return
 	}
-        else if(hashtable_origin[bucket][j]->dest == key)
+        else if(hashtable_origin[bucket][j]->dest == key) //when there is a data we want 
                 return hashtable_origin[bucket][j];
 
     }
